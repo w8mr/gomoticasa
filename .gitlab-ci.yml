@@ -1,0 +1,63 @@
+image: google/cloud-sdk
+
+variables:
+  REPO_NAME: w8mr.nl/go_my_home
+
+before_script:
+  - echo $CI_BUILD_REF
+  - echo $CI_PROJECT_DIR
+
+stages:
+#  - test
+#  - deploy
+  - buildimage
+
+build-image:
+  image: docker:git
+  stage: buildimage
+  services:
+    - docker:dind
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker build -t registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_REF_SLUG .
+    - docker push registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_REF_SLUG
+    - docker tag registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_REF_SLUG registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_SHA
+    - docker push registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_SHA
+
+
+#test-project:
+#  image: golang:1.8
+#  stage: test
+#  script:
+#    - go version
+#    - mkdir -p $GOPATH/src/$REPO_NAME
+#    - mv $CI_PROJECT_DIR/* $GOPATH/src/$REPO_NAME
+#    - cd $GOPATH/src/$REPO_NAME/server
+#    - go test
+
+#build-project:
+#  stage: deploy
+#  script:
+#    - apt-get install -y git
+#    - wget https://storage.googleapis.com/golang/go1.6.4.linux-amd64.tar.gz
+#    - tar -C /usr/local -xzf go1.6.4.linux-amd64.tar.gz
+#    - export PATH=$PATH:/usr/local/go/bin
+#    - export GOPATH=/home/go
+#    - gcloud --version
+#    - mkdir -p $GOPATH/src/$REPO_NAME
+#    - mkdir -p $GOPATH/pkg
+#    - mkdir -p $GOPATH/bin
+#    - mv $CI_PROJECT_DIR/* $GOPATH/src/$REPO_NAME/
+#    - mkdir -p $CI_PROJECT_DIR/artifacts
+#    - cd $GOPATH/src/$REPO_NAME
+#    - gcloud config set project wachtmeestertjes-web
+#    - echo $SERVICE_ACCOUNT_KEY > $CI_PROJECT_DIR/sakey.json
+#    - gcloud auth activate-service-account --key-file=$CI_PROJECT_DIR/sakey.json
+#    - rm $CI_PROJECT_DIR/sakey.json
+#    - cd $GOPATH/src/$REPO_NAME
+#    - go get ./...
+#    - gcloud beta app deploy server/app.yaml --quiet --version dev
+
+#  artifacts:
+#    paths:
+#      - artifacts/server

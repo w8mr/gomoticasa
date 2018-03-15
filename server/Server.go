@@ -13,12 +13,7 @@ import (
 	"w8mr.nl/go_my_home/controller"
 )
 
-var mode = "Low_High"
-var speed = "Low"
-var fanspeed = "Low"
-var humidity = 100.0;
-var temperature = 20.0;
-
+var context = Context{"Low_High", "Low", "Low", 0.0, 20.0}
 
 var speeds = map[string](map[string]string){
 	"Low_Low":       {"Low": "Low", "Medium": "Low", "High": "Low"},
@@ -27,6 +22,14 @@ var speeds = map[string](map[string]string){
 	"Medium_Medium": {"Low": "Medium", "Medium": "Medium", "High": "Medium"},
 	"Medium_High":   {"Low": "Medium", "Medium": "Medium", "High": "High"},
 	"High_High":     {"Low": "High", "Medium": "High", "High": "High"},
+}
+
+type Context struct {
+	mode string
+	speed string
+	fanspeed string
+	humidity float64
+	temperature float64
 }
 
 //define a function for the default message handler
@@ -40,44 +43,69 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 		panic(err)
 	}
 	m := f.(map[string]interface{})
-	humidity = traverseJSONMap(m, "AM2301.Humidity").(float64)
-	temperature = traverseJSONMap(m, "AM2301.Temperature").(float64)
-	fmt.Printf("Humidity: %f\n", humidity)
-	fmt.Printf("Temperature: %f\n", temperature)
-	fmt.Printf("Speed before: %v\n", speed)
+	context.humidity = traverseJSONMap(m, "AM2301.Humidity").(float64)
+	context.temperature = traverseJSONMap(m, "AM2301.Temperature").(float64)
+	fmt.Printf("Humidity: %f\n", context.humidity)
+	fmt.Printf("Temperature: %f\n", context.temperature)
+	fmt.Printf("Speed before: %v\n", context.speed)
 
-	switch speed {
+	calcSpeed(&context)
+	setSpeed(client, &context)
+
+	fmt.Printf("Speed after: %v\n", context.speed)
+
+	}
+
+func calcSpeed(context *Context) {
+	switch context.speed {
 	case "Low":
 		{
-			if humidity > 50.0 {
-				speed = "Medium"
+			if context.humidity > 50.0 {
+				context.speed = "Medium"
 			}
 		}
 	case "Medium":
 		{
-			if humidity < 48.0 {
-				speed = "Low"
+			if context.humidity < 48.0 {
+				context.speed = "Low"
 			}
-			if humidity > 67.0 {
-				speed = "High"
+			if context.humidity > 67.0 {
+				context.speed = "High"
 			}
 		}
 	case "High":
 		{
-			if humidity < 65.0 {
-				speed = "Medium"
+			if context.humidity < 65.0 {
+				context.speed = "Medium"
 			}
 		}
 	}
 
-	fmt.Printf("Speed after: %v\n", speed)
-
-	fanspeed = speeds[mode][speed]
-
-	fmt.Printf("Fan speed: %v\n", fanspeed)
-
+	context.fanspeed = speeds[context.mode][context.speed]
+	fmt.Printf("Fan speed: %v\n", context.fanspeed)
 }
 
+func setSpeed(client mqtt.Client, context *Context) {
+	log.Println("Message")
+
+	var speed1 = "OFF"
+	if context.fanspeed == "Medium" {
+		speed1 = "ON"
+	}
+	token1 := client.Publish("cmnd/sonoff_wtw/power1", 0, false, speed1)
+
+	var speed2 = "OFF"
+	if context.fanspeed == "High" {
+		speed2 = "ON"
+	}
+	token2 := client.Publish("cmnd/sonoff_wtw/power2", 0, false, speed2)
+
+	token1.Wait()
+	token2.Wait()
+
+	log.Println("Done")
+
+}
 func traverseJSONMap(m map[string]interface{}, path string) interface{} {
 	parts := strings.SplitAfterN(path, ".", 2)
 	key := strings.TrimSuffix(parts[0], ".")
@@ -114,16 +142,13 @@ func Run(cfg *config.Config) error {
 		os.Exit(1)
 	}
 
-	log.Println("Message")
-	text := fmt.Sprintf("this is msg #%d!", 1)
-	token := c.Publish("tele/sonoff_bathroom/STATE", 0, false, text)
-	token.Wait()
-
-	log.Println("Done")
 	//c.Disconnect(250)
 
 	router := vestigo.NewRouter()
 	controller.SetupStatic(router)
+
+	router.Get("/mode", modeHandler(c, &context))
+
 
 	http.Handle("/", router)
 	log.Println(fmt.Sprintf("Server starting on port %d", cfg.Server.Port))
@@ -133,4 +158,17 @@ func Run(cfg *config.Config) error {
 		nil)
 
 	return err
+}
+
+func modeHandler(client mqtt.Client, context *Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		modeParam := r.URL.Query().Get("mode")
+		fmt.Fprintf(w, "OK, mode=%v", modeParam)
+		if speeds[modeParam] != nil {
+			context.mode = modeParam
+			calcSpeed(context)
+			setSpeed(client, context)
+		}
+	}
 }
