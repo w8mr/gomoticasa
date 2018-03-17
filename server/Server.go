@@ -192,6 +192,7 @@ func handleView(context *Context, w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "<html><head>"+
+		"<meta name=viewport content=\"width=device-width, initial-scale=1, user-scalable=yes\">"+
 		"<style>"+
 		"body { font-family: arial; font-size:16px }"+
 		".button { background: #008CBA; color: white; border-radius:12px; padding: 8px 16px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; -webkit-transition-duration: 0.4s; transition-duration: 0.4s; cursor: pointer; }"+
