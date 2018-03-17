@@ -10,7 +10,8 @@ import (
 	"os"
 	"strings"
 	"w8mr.nl/go_my_home/config"
-	"w8mr.nl/go_my_home/controller"
+//	"w8mr.nl/go_my_home/controller"
+//	"golang.org/x/tools/go/gcimporter15/testdata"
 )
 
 var context = Context{"Low_High", "Low", "Low", 0.0, 20.0}
@@ -49,8 +50,12 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Temperature: %f\n", context.temperature)
 	fmt.Printf("Speed before: %v\n", context.speed)
 
+
+	oldFanspeed := context.fanspeed
 	calcSpeed(&context)
-	setSpeed(client, &context)
+	if oldFanspeed != context.fanspeed {
+		setSpeed(client, &context)
+	}
 
 	fmt.Printf("Speed after: %v\n", context.speed)
 
@@ -145,9 +150,9 @@ func Run(cfg *config.Config) error {
 	//c.Disconnect(250)
 
 	router := vestigo.NewRouter()
-	controller.SetupStatic(router)
+	//controller.SetupStatic(router)
 
-	router.Get("/mode", modeHandler(c, &context))
+	router.Get("/", modeHandler(c, &context))
 
 
 	http.Handle("/", router)
@@ -164,11 +169,43 @@ func modeHandler(client mqtt.Client, context *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		modeParam := r.URL.Query().Get("mode")
-		fmt.Fprintf(w, "OK, mode=%v", modeParam)
 		if speeds[modeParam] != nil {
 			context.mode = modeParam
+
+			oldFanspeed := context.fanspeed
 			calcSpeed(context)
-			setSpeed(client, context)
+			if oldFanspeed != context.fanspeed {
+				setSpeed(client, context)
+			}
+		}
+		handleView(context, w, r)
+	}
+}
+
+func handleView(context *Context, w http.ResponseWriter, r *http.Request) {
+	var selected = func(context *Context, value string) string {
+		if (context.mode == value) {
+			return "selected"
+		} else {
+			return ""
 		}
 	}
+
+	fmt.Fprintf(w, "<html><head>"+
+		"<style>"+
+		"body { font-family: arial; font-size:16px }"+
+		".button { background: #008CBA; color: white; border-radius:12px; padding: 8px 16px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 4px 2px; -webkit-transition-duration: 0.4s; transition-duration: 0.4s; cursor: pointer; }"+
+		".button:hover, .selected { background: white; border: 2px solid #008CBA }"+
+		".selected { color: #008CBA }"+
+		".button:hover, .selected:hover { color: black }"+
+		"</style>"+
+		"</head><body>"+
+		"<p>Luchtvochtigeid: %.1f</p>"+
+		"<p>Huidige snelheid: %v</p>"+
+		"<form action=\"/\" method=\"GET\">"+
+		"<button name=\"mode\" value=\"Low_Low\" class=\"button %s\">Laag</button>"+
+		"<button name=\"mode\" value=\"Low_High\" class=\"button %s\">Auto</button>"+
+		"<button name=\"mode\" value=\"Medium_High\" class=\"button %s\">Middel</button>"+
+		"<button name=\"mode\" value=\"High_High\" class=\"button %s\">Hoog</button>"+
+		"</form>", context.humidity, context.fanspeed, selected(context, "Low_Low"), selected(context, "Low_High"), selected(context, "Medium_High"), selected(context, "High_High"))
 }
