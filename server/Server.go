@@ -35,8 +35,6 @@ type Context struct {
 
 //define a function for the default message handler
 var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Println("Subsribe")
-
 	log.Printf("Sensor message: %s\n", msg.Payload())
 
 	var f interface{}
