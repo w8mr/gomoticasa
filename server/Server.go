@@ -9,12 +9,11 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 	"w8mr.nl/go_my_home/config"
-//	"w8mr.nl/go_my_home/controller"
-//	"golang.org/x/tools/go/gcimporter15/testdata"
 )
 
-var context = Context{"Low_High", "Low", "Low", 0.0, 20.0}
+var context = Context{"Low_High", "Low", "Low", 0.0, 20.0, time.Unix(0, 0)}
 
 var speeds = map[string](map[string]string){
 	"Low_Low":       {"Low": "Low", "Medium": "Low", "High": "Low"},
@@ -26,17 +25,19 @@ var speeds = map[string](map[string]string){
 }
 
 type Context struct {
-	mode string
-	speed string
-	fanspeed string
-	humidity float64
+	mode        string
+	speed       string
+	fanspeed    string
+	humidity    float64
 	temperature float64
+	lastUpdated time.Time
 }
 
 //define a function for the default message handler
 var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("TOPIC: %s\n", msg.Topic())
-	fmt.Printf("MSG: %s\n", msg.Payload())
+	log.Println("Subsribe")
+
+	log.Printf("Sensor message: %s\n", msg.Payload())
 
 	var f interface{}
 	err := json.Unmarshal(msg.Payload(), &f)
@@ -46,20 +47,15 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	m := f.(map[string]interface{})
 	context.humidity = traverseJSONMap(m, "AM2301.Humidity").(float64)
 	context.temperature = traverseJSONMap(m, "AM2301.Temperature").(float64)
-	fmt.Printf("Humidity: %f\n", context.humidity)
-	fmt.Printf("Temperature: %f\n", context.temperature)
-	fmt.Printf("Speed before: %v\n", context.speed)
-
+	context.lastUpdated = time.Now()
 
 	oldFanspeed := context.fanspeed
 	calcSpeed(&context)
 	if oldFanspeed != context.fanspeed {
+		log.Printf("Changed speed, because humidity changed, new speed: %v", context.fanspeed)
 		setSpeed(client, &context)
 	}
-
-	fmt.Printf("Speed after: %v\n", context.speed)
-
-	}
+}
 
 func calcSpeed(context *Context) {
 	switch context.speed {
@@ -87,12 +83,9 @@ func calcSpeed(context *Context) {
 	}
 
 	context.fanspeed = speeds[context.mode][context.speed]
-	fmt.Printf("Fan speed: %v\n", context.fanspeed)
 }
 
 func setSpeed(client mqtt.Client, context *Context) {
-	log.Println("Message")
-
 	var speed1 = "OFF"
 	if context.fanspeed == "Medium" {
 		speed1 = "ON"
@@ -107,18 +100,14 @@ func setSpeed(client mqtt.Client, context *Context) {
 
 	token1.Wait()
 	token2.Wait()
-
-	log.Println("Done")
-
 }
+
 func traverseJSONMap(m map[string]interface{}, path string) interface{} {
 	parts := strings.SplitAfterN(path, ".", 2)
 	key := strings.TrimSuffix(parts[0], ".")
 	if len(parts) == 1 {
-		fmt.Printf("1 part: %s, %v\n", key, m[key])
 		return m[key]
 	} else {
-		fmt.Printf("2 parts: %s, %v, %s\n", key, m[key], parts[1])
 		return traverseJSONMap(m[key].(map[string]interface{}), parts[1])
 	}
 }
@@ -143,7 +132,7 @@ func Run(cfg *config.Config) error {
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
 	if token := c.Subscribe("tele/sonoff_bathroom/SENSOR", 0, nil); token.Wait() && token.Error() != nil {
-		fmt.Println(token.Error())
+		log.Println("Error subsribing: %v", token.Error())
 		os.Exit(1)
 	}
 
@@ -153,6 +142,8 @@ func Run(cfg *config.Config) error {
 	//controller.SetupStatic(router)
 
 	router.Get("/", modeHandler(c, &context))
+
+	setupTimer()
 
 
 	http.Handle("/", router)
@@ -165,16 +156,39 @@ func Run(cfg *config.Config) error {
 	return err
 }
 
+func setupTimer() {
+	ticker := time.NewTicker(1 * time.Minute)
+	go func() {
+		for t := range ticker.C {
+			if (context.lastUpdated.Unix() != 0) &&
+				(time.Now().Sub(context.lastUpdated).Minutes() > 5.0) {
+					_ = t
+					log.Panicf("Exited because no event are recieved anymore")
+			}
+		}
+	}()
+}
+
+func lastUpdated(context *Context) string {
+	if context.lastUpdated.Unix() != 0 {
+		return fmt.Sprintf("%.0f minuten geleden", time.Now().Sub(context.lastUpdated).Minutes())
+	} else {
+		return "Nooit"
+	}
+}
+
 func modeHandler(client mqtt.Client, context *Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		modeParam := r.URL.Query().Get("mode")
 		if speeds[modeParam] != nil {
 			context.mode = modeParam
+			log.Printf("Mode changed, new mode: %v", context.mode)
 
 			oldFanspeed := context.fanspeed
 			calcSpeed(context)
 			if oldFanspeed != context.fanspeed {
+				log.Printf("Changed speed, because mode changed, new speed: %v", context.fanspeed)
 				setSpeed(client, context)
 			}
 		}
@@ -184,7 +198,7 @@ func modeHandler(client mqtt.Client, context *Context) http.HandlerFunc {
 
 func handleView(context *Context, w http.ResponseWriter, r *http.Request) {
 	var selected = func(context *Context, value string) string {
-		if (context.mode == value) {
+		if context.mode == value {
 			return "selected"
 		} else {
 			return ""
@@ -203,10 +217,11 @@ func handleView(context *Context, w http.ResponseWriter, r *http.Request) {
 		"</head><body>"+
 		"<p>Luchtvochtigeid: %.1f</p>"+
 		"<p>Huidige snelheid: %v</p>"+
+		"<p>Laatst gedupdate: %v</p>"+
 		"<form action=\"/\" method=\"GET\">"+
 		"<button name=\"mode\" value=\"Low_Low\" class=\"button %s\">Laag</button>"+
 		"<button name=\"mode\" value=\"Low_High\" class=\"button %s\">Auto</button>"+
 		"<button name=\"mode\" value=\"Medium_High\" class=\"button %s\">Middel</button>"+
 		"<button name=\"mode\" value=\"High_High\" class=\"button %s\">Hoog</button>"+
-		"</form>", context.humidity, context.fanspeed, selected(context, "Low_Low"), selected(context, "Low_High"), selected(context, "Medium_High"), selected(context, "High_High"))
+		"</form>", context.humidity, context.fanspeed, lastUpdated(context), selected(context, "Low_Low"), selected(context, "Low_High"), selected(context, "Medium_High"), selected(context, "High_High"))
 }
