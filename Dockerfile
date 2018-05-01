@@ -5,7 +5,7 @@ ENV GOPATH=/go REPO_NAME=w8mr.nl PROJECT_NAME=go_my_home
 COPY . $GOPATH/src/$REPO_NAME/$PROJECT_NAME
 WORKDIR $GOPATH/src/$REPO_NAME/$PROJECT_NAME
 
-RUN env GOARCH=arm GOARM=6 go get -u github.com/golang/dep/cmd/dep
+RUN env GOARCH=amd64 go get -u github.com/golang/dep/cmd/dep
 RUN dep ensure
 RUN env GOARCH=arm GOARM=6 go build -ldflags "-linkmode external -extldflags -static" -a -installsuffix cgo -o main .
 
