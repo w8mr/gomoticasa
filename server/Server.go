@@ -59,22 +59,22 @@ func calcSpeed(context *Context) {
 	switch context.speed {
 	case "Low":
 		{
-			if context.humidity > 50.0 {
+			if context.humidity > 52.0 {
 				context.speed = "Medium"
 			}
 		}
 	case "Medium":
 		{
-			if context.humidity < 48.0 {
+			if context.humidity < 50.0 {
 				context.speed = "Low"
 			}
-			if context.humidity > 67.0 {
+			if context.humidity > 54.0 {
 				context.speed = "High"
 			}
 		}
 	case "High":
 		{
-			if context.humidity < 65.0 {
+			if context.humidity < 52.0 {
 				context.speed = "Medium"
 			}
 		}
@@ -114,7 +114,7 @@ func Run(cfg *config.Config) error {
 
 	//create a ClientOptions struct setting the broker address, clientid, turn
 	//off trace output and set the default message handler
-	opts := mqtt.NewClientOptions().AddBroker("tcp://192.168.1.180:1883")
+	opts := mqtt.NewClientOptions().AddBroker("tcp://192.168.1.181:1883")
 	opts.SetClientID("go-my-home")
 	opts.SetDefaultPublishHandler(f)
 	opts.SetPassword("cafe123456")
