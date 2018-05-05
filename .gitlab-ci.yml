@@ -19,10 +19,10 @@ build-image:
     - docker:dind
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
-    - docker build -t registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_REF_SLUG .
-    - docker push registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_REF_SLUG
-    - docker tag registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_REF_SLUG registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_SHA
-    - docker push registry.gitlab.com/zork538/go_my_home:$CI_COMMIT_SHA
+    - docker build -t registry.gitlab.com/w8mr/go_my_home:$CI_COMMIT_REF_SLUG .
+    - docker push registry.gitlab.com/w8mr/go_my_home:$CI_COMMIT_REF_SLUG
+    - docker tag registry.gitlab.com/w8mr/go_my_home:$CI_COMMIT_REF_SLUG registry.gitlab.com/w8mr/go_my_home:$CI_COMMIT_SHA
+    - docker push registry.gitlab.com/w8mr/go_my_home:$CI_COMMIT_SHA
 
 
 #test-project:
