@@ -59,22 +59,22 @@ func calcSpeed(context *Context) {
 	switch context.speed {
 	case "Low":
 		{
-			if context.humidity > 52.0 {
+			if context.humidity > 54.0 {
 				context.speed = "Medium"
 			}
 		}
 	case "Medium":
 		{
-			if context.humidity < 50.0 {
+			if context.humidity < 52.0 {
 				context.speed = "Low"
 			}
-			if context.humidity > 54.0 {
+			if context.humidity > 65.0 {
 				context.speed = "High"
 			}
 		}
 	case "High":
 		{
-			if context.humidity < 52.0 {
+			if context.humidity < 55.0 {
 				context.speed = "Medium"
 			}
 		}
