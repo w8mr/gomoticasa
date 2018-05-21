@@ -15,7 +15,7 @@ import (
 
 const hist_size = 100
 
-var context = Context{"Low_High", "Low", "Low", 0.0, 20.0, 0.0, time.Unix(0, 0), [60]float64{}, 0}
+var context = Context{"Low_High", "Low", "Low", 0.0, 20.0, 0.0, time.Unix(0, 0), [hist_size]float64{}, 0}
 
 var speeds = map[string](map[string]string){
 	"Low_Low":       {"Low": "Low", "Medium": "Low", "High": "Low"},
