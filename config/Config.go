@@ -37,11 +37,11 @@ func (cfg *Config) FromFlags() {
 	flag.StringVar(&cfg.Db.Type, "dbtype", "stub", "Database type")
 	flag.StringVar(&cfg.Db.Url, "dburl", "localhost:5432", "Database Url")
 
-	flag.StringVar(&cfg.Mqtt.Url, "mqtt-url", "tcp://localhost:1883", "Mqtt url")
-	flag.StringVar(&cfg.Mqtt.User, "mqtt-user", "", "Mqtt user")
-	flag.StringVar(&cfg.Mqtt.Password, "mqtt-password", "", "Mqtt password")
+	flag.StringVar(&cfg.Mqtt.Url, "mqtturl", "tcp://localhost:1883", "Mqtt url")
+	flag.StringVar(&cfg.Mqtt.User, "mqttuser", "", "Mqtt user")
+	flag.StringVar(&cfg.Mqtt.Password, "mqttpassword", "", "Mqtt password")
 
-	flag.IntVar(&cfg.Server.Port, "server-port", 8080, "Server port")
+	flag.IntVar(&cfg.Server.Port, "serverport", 8080, "Server port")
 
 
 	flag.Parse()
