@@ -13,6 +13,8 @@ import (
 	"w8mr.nl/go_my_home/config"
 )
 
+const hist_size = 100
+
 var context = Context{"Low_High", "Low", "Low", 0.0, 20.0, 0.0, time.Unix(0, 0), [60]float64{}, 0}
 
 var speeds = map[string](map[string]string){
@@ -32,7 +34,7 @@ type Context struct {
 	temperature float64
 	switchHumidity    float64
 	lastUpdated time.Time
-	history     [60]float64
+	history     [hist_size]float64
 	history_index int
 }
 
@@ -63,7 +65,7 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 func updateHistory(context *Context) {
 	index := context.history_index
 	context.history[index] = context.humidity
-	index = (index + 1) % len(context.history)
+	index = (index + 1) % hist_size
 	context.history_index = index
 }
 
@@ -71,7 +73,7 @@ func readAverageHistory(context *Context, history int, size int) float64{
 	total := 0.0
 	index := context.history_index
 	for i:=0; i < size; i++ {
-		total = total + context.history[(index - history - i) % len(context.history)]
+		total = total + context.history[(index - history - i + hist_size) % hist_size]
 	}
 	return total / float64(size)
 }
