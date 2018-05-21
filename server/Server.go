@@ -13,7 +13,7 @@ import (
 	"w8mr.nl/go_my_home/config"
 )
 
-var context = Context{"Low_High", "Low", "Low", 0.0, 20.0, time.Unix(0, 0)}
+var context = Context{"Low_High", "Low", "Low", 0.0, 20.0, time.Unix(0, 0), [60]float64{}, 0}
 
 var speeds = map[string](map[string]string){
 	"Low_Low":       {"Low": "Low", "Medium": "Low", "High": "Low"},
@@ -30,7 +30,10 @@ type Context struct {
 	fanspeed    string
 	humidity    float64
 	temperature float64
+	switchHumidity    float64
 	lastUpdated time.Time
+	history     [60]float64
+	history_index int
 }
 
 //define a function for the default message handler
@@ -47,6 +50,8 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	context.temperature = traverseJSONMap(m, "AM2301.Temperature").(float64)
 	context.lastUpdated = time.Now()
 
+	updateHistory(context)
+
 	oldFanspeed := context.fanspeed
 	calcSpeed(&context)
 	if oldFanspeed != context.fanspeed {
@@ -55,21 +60,50 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	}
 }
 
+func updateHistory(context *Context) {
+	index := context.history_index
+	context.history[index] = context.humidity
+	index = (index + 1) % len(context.history)
+	context.history_index = index
+}
+
+func readAverageHistory(context *Context, history int, size int) float64{
+	total := 0.0
+	index := context.history_index
+	for i:=0; i < size; i++ {
+		total = total + context.history[(index - history - i) % len(context.history)]
+	}
+	return total / float64(size)
+}
+
+func historyDiff(context *Context, diff int) float64 {
+	return readAverageHistory(context, diff, 3) - readAverageHistory(context, 0, 3)
+}
+
 func calcSpeed(context *Context) {
 	switch context.speed {
 	case "Low":
 		{
-			if context.humidity > 54.0 {
+			if context.humidity > 60.0 {
+				context.speed = "Medium"
+			}
+			if context.humidity > context.switchHumidity + 2.0 {
 				context.speed = "Medium"
 			}
 		}
 	case "Medium":
 		{
-			if context.humidity < 52.0 {
+			if context.humidity < 50.0 {
 				context.speed = "Low"
 			}
-			if context.humidity > 65.0 {
+			if context.humidity > 70.0 {
 				context.speed = "High"
+			}
+			if historyDiff(context,10) < 0.2 {
+				context.speed = "Low"
+			}
+			if context.humidity > context.switchHumidity + 2.0 {
+				context.speed = "Medium"
 			}
 		}
 	case "High":
@@ -77,9 +111,12 @@ func calcSpeed(context *Context) {
 			if context.humidity < 55.0 {
 				context.speed = "Medium"
 			}
+			if historyDiff(context,5) < 0.2 {
+				context.speed = "Low"
+			}
 		}
 	}
-
+	context.switchHumidity = context.humidity
 	context.fanspeed = speeds[context.mode][context.speed]
 }
 
@@ -114,11 +151,11 @@ func Run(cfg *config.Config) error {
 
 	//create a ClientOptions struct setting the broker address, clientid, turn
 	//off trace output and set the default message handler
-	opts := mqtt.NewClientOptions().AddBroker("tcp://192.168.1.181:1883")
+	opts := mqtt.NewClientOptions().AddBroker(cfg.Mqtt.Url)
 	opts.SetClientID("go-my-home")
 	opts.SetDefaultPublishHandler(f)
-	opts.SetPassword("cafe123456")
-	opts.SetUsername("openhab")
+	opts.SetPassword(cfg.Mqtt.Password)
+	opts.SetUsername(cfg.Mqtt.User)
 
 	//create and start a client using the above ClientOptions
 	c := mqtt.NewClient(opts)
@@ -133,8 +170,6 @@ func Run(cfg *config.Config) error {
 		log.Println("Error subsribing: %v", token.Error())
 		os.Exit(1)
 	}
-
-	//c.Disconnect(250)
 
 	router := vestigo.NewRouter()
 	//controller.SetupStatic(router)
