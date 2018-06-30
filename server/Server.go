@@ -234,6 +234,7 @@ func setupOAuth(router *vestigo.Router) {
 	router.Get("/authorize", func(w http.ResponseWriter, r *http.Request) {
 		err := srv.HandleAuthorizeRequest(w, r)
 		if err != nil {
+			log.Printf("")
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
 	})
@@ -259,7 +260,7 @@ func setupTimer() {
 
 func lastUpdated(context *Context) string {
 	if context.lastUpdated.Unix() != 0 {
-		return fmt.Sprintf("%.0f minuten geleden", time.Now().Sub(context.lastUpdated).Minutes())
+		return fmt.Sprintf("%.0f seconden geleden", time.Now().Sub(context.lastUpdated).Seconds())
 	} else {
 		return "Nooit"
 	}
