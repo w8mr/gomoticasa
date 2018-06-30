@@ -188,7 +188,7 @@ func Run(cfg *config.Config) error {
 	//controller.SetupStatic(router)
 
 	router.Get("/", modeHandler(c, &context))
-
+	router.Get("action", actionHandler(&context))
 	setupOAuth(router)
 
 	setupTimer()
@@ -203,6 +203,15 @@ func Run(cfg *config.Config) error {
 
 	return err
 }
+
+func actionHandler(context *Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		log.Print(r)
+		_ = context
+	}
+}
+
 
 func setupOAuth(router *vestigo.Router) {
 	manager := manage.NewDefaultManager()
