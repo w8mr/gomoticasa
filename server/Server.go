@@ -188,7 +188,7 @@ func Run(cfg *config.Config) error {
 	//controller.SetupStatic(router)
 
 	router.Get("/", modeHandler(c, &context))
-	router.Get("/action", actionHandler(&context))
+	router.Post("/action", actionHandler(&context))
 	setupOAuth(router)
 
 	setupTimer()
