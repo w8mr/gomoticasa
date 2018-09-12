@@ -105,10 +105,10 @@ func calcSpeed(context *Context) {
 			if context.humidity < 50.0 {
 				context.speed = "Low"
 			}
-			if context.humidity > 70.0 {
+			if context.humidity > 80.0 {
 				context.speed = "High"
 			}
-			if context.humidity < 59.0 {
+			if context.humidity < 69.0 {
 				if historyDiff(context,10) < 0.2 {
 					context.speed = "Low"
 				}
@@ -122,7 +122,7 @@ func calcSpeed(context *Context) {
 			if context.humidity < 55.0 {
 				context.speed = "Medium"
 			}
-			if context.humidity < 69.0 {
+			if context.humidity < 79.0 {
 				if historyDiff(context,10) < 0.2 {
 					context.speed = "Medium"
 				}
