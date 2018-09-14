@@ -64,6 +64,7 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	oldFanspeed := context.fanspeed
 	calcSpeed(&context)
 	if oldFanspeed != context.fanspeed {
+		context.switchHumidity = context.humidity
 		log.Printf("Changed speed, because humidity changed, new speed: %v", context.fanspeed)
 		setSpeed(client, &context)
 	}
@@ -93,7 +94,7 @@ func calcSpeed(context *Context) {
 	switch context.speed {
 	case "Low":
 		{
-			if context.humidiy>70.0 {
+			if context.humidity > 70.0 {
 				context.speed = "Medium"
 			}
 			if context.humidity > context.switchHumidity + 2.0 {
@@ -129,7 +130,6 @@ func calcSpeed(context *Context) {
 			}
 		}
 	}
-	context.switchHumidity = context.humidity
 	context.fanspeed = speeds[context.mode][context.speed]
 }
 
