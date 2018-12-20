@@ -153,7 +153,7 @@ func setSpeed(client mqtt.Client, context *Context) {
 
 func updateStatus(client mqtt.Client, context *Context) {
 	token1 := client.Publish("d566/tempset-ambient/set", 0, false, context.temperature)
-	token1 := client.Publish("d566/tempset-humidity/set", 0, false, context.humidity)
+	token2 := client.Publish("d566/tempset-humidity/set", 0, false, context.humidity)
 
 	token1.Wait()
 	token2.Wait()
