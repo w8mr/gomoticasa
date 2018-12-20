@@ -68,6 +68,7 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 		log.Printf("Changed speed, because humidity changed, new speed: %v", context.fanspeed)
 		setSpeed(client, &context)
 	}
+	updateStatus(client, &context)
 }
 
 func updateHistory(context *Context) {
@@ -145,6 +146,14 @@ func setSpeed(client mqtt.Client, context *Context) {
 		speed2 = "ON"
 	}
 	token2 := client.Publish("cmnd/sonoff_wtw/power2", 0, false, speed2)
+
+	token1.Wait()
+	token2.Wait()
+}
+
+func updateStatus(client mqtt.Client, context *Context) {
+	token1 := client.Publish("d566/tempset-ambient/set", 0, false, context.temperature)
+	token1 := client.Publish("d566/tempset-humidity/set", 0, false, context.humidity)
 
 	token1.Wait()
 	token2.Wait()
