@@ -46,7 +46,7 @@ type Context struct {
 }
 
 //define a function for the default message handler
-var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+var bathroom_sensor mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	log.Printf("Sensor message: %s\n", msg.Payload())
 
 	var f interface{}
@@ -70,6 +70,15 @@ var f mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	}
 	updateStatus(client, &context)
 }
+
+var defaultHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+	log.Printf("Generic message: %s\n", msg.Payload())
+}
+
+var wtwMode mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+	log.Printf("WTW message: %s\n", msg.Payload())
+}
+
 
 func updateHistory(context *Context) {
 	index := context.history_index
@@ -175,7 +184,7 @@ func Run(cfg *config.Config) error {
 	//off trace output and set the default message handler
 	opts := mqtt.NewClientOptions().AddBroker(cfg.Mqtt.Url)
 	opts.SetClientID("go-my-home")
-	opts.SetDefaultPublishHandler(f)
+	opts.SetDefaultPublishHandler(defaultHandler)
 	opts.SetPassword(cfg.Mqtt.Password)
 	opts.SetUsername(cfg.Mqtt.User)
 
@@ -185,13 +194,20 @@ func Run(cfg *config.Config) error {
 		panic(token.Error())
 	}
 
-	log.Println("Subsribe")
+	log.Println(fmt.Sprintf("Subscribe (url: %v, user: %v, password: %v)", cfg.Mqtt.Url, cfg.Mqtt.User, cfg.Mqtt.Password))
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
-	if token := c.Subscribe("tele/sonoff_bathroom/SENSOR", 0, nil); token.Wait() && token.Error() != nil {
-		log.Println("Error subsribing: %v", token.Error())
+	if token := c.Subscribe("tele/sonoff_bathroom/SENSOR", 0, bathroom_sensor); token.Wait() && token.Error() != nil {
+		log.Println(fmt.Sprintf("Error subscribing sensor: %v", token.Error()))
 		os.Exit(1)
 	}
+
+	if token := c.Subscribe("d316/tempset-mode", 0, wtwMode); token.Wait() && token.Error() != nil {
+		log.Println(fmt.Sprintf("Error subscribing wtw: %v", token.Error()))
+		os.Exit(1)
+	}
+
+	log.Println("Subscribed")
 
 	router := vestigo.NewRouter()
 	//controller.SetupStatic(router)

@@ -2,92 +2,119 @@
 
 
 [[projects]]
+  digest = "1:63bd62f5b57c55f0e07c9f8a76d841c7fa74905cc3cb6b8a55e923450f4bee81"
   name = "github.com/codegangsta/inject"
   packages = ["."]
+  pruneopts = "UT"
   revision = "37d7f8432a3e684eef9b2edece76bdfa6ac85b39"
   version = "v1.0-rc1"
 
 [[projects]]
+  digest = "1:3a89e37c62cc9a6371251d22a072b4ddcf079cda13fcb2a64d092fe635fa0ddd"
   name = "github.com/eclipse/paho.mqtt.golang"
   packages = [
     ".",
-    "packets"
+    "packets",
   ]
+  pruneopts = "UT"
   revision = "aff15770515e3c57fc6109da73d42b0d46f7f483"
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:4f2f31064b2690642c8ac1316c09559b205f2d483256b34ad95e0e57edfbcb99"
   name = "github.com/husobee/vestigo"
   packages = ["."]
+  pruneopts = "UT"
   revision = "f8f5b5dc2bd74408887fd4b462055e324c4cbd63"
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:6221a3a452964b1ff30efdc22209b124d54d04373e5993264d3fa9b13da0659d"
   name = "github.com/namsral/flag"
   packages = ["."]
+  pruneopts = "UT"
   revision = "71ceffbeb0ba60fccc853971bb3ed4d7d90bfd04"
   version = "v1.7.4-pre"
 
 [[projects]]
+  digest = "1:a3b8912deeef29007fab9a13a9f21b9e9b59c621a2ed61e2fe7b37320a71fbd5"
   name = "github.com/satori/go.uuid"
   packages = ["."]
+  pruneopts = "UT"
   revision = "master"
 
 [[projects]]
   branch = "master"
+  digest = "1:3297205be37afe3f25875b99ad48babe2aebb6e0cf61631d6d9851ecb266370e"
   name = "github.com/tidwall/btree"
   packages = ["."]
+  pruneopts = "UT"
   revision = "9876f1454cf0993a53d74c27196993e345f50dd1"
 
 [[projects]]
+  digest = "1:0d52ec71bbf60ef362ba12db486a7639acdc09e703c93c36c43a7844d071b1ce"
   name = "github.com/tidwall/buntdb"
   packages = ["."]
+  pruneopts = "UT"
   revision = "2da7c106683f522198cdf55ed8db42b374de50d7"
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:5035b1f8df9ce0a77ce87eb485cb5f10e285b6772c953ab9fcd69f418620a998"
   name = "github.com/tidwall/gjson"
   packages = ["."]
+  pruneopts = "UT"
   revision = "afaeb9562041a8018c74e006551143666aed08bf"
   version = "v1.1.1"
 
 [[projects]]
   branch = "master"
+  digest = "1:403222dac436240f4a747c4ced09c1d5884082d920f151ea6c19abf7a75d4e7c"
   name = "github.com/tidwall/grect"
   packages = ["."]
+  pruneopts = "UT"
   revision = "ba9a043346eba55344e40d66a5e74cfda3a9d293"
 
 [[projects]]
   branch = "master"
+  digest = "1:d3f968e2a2c9f8506ed44b01b605ade0176ba6cf73ff679073e77cfdef2c0d55"
   name = "github.com/tidwall/match"
   packages = ["."]
+  pruneopts = "UT"
   revision = "1731857f09b1f38450e2c12409748407822dc6be"
 
 [[projects]]
   branch = "master"
+  digest = "1:54fec16397c72e6ecb5e61309e369517d4ea7aaee4d97454c36075539039ad85"
   name = "github.com/tidwall/rtree"
   packages = [
     ".",
-    "base"
+    "base",
   ]
+  pruneopts = "UT"
   revision = "6cd427091e0e662cb4f8e2c9eb1a41e1c46ff0d3"
 
 [[projects]]
   branch = "master"
+  digest = "1:1b885e925ee7c05565b3178a4fa818bf33885878344d8629ac433a5db99d58e4"
   name = "github.com/tidwall/tinyqueue"
   packages = ["."]
+  pruneopts = "UT"
   revision = "1e39f55115634cad2c504631c8bfcc292f2c9c55"
 
 [[projects]]
   branch = "master"
+  digest = "1:5b6d4ba2f236da2ecbf7558cac5560f13dadbadde545081f5d790f7a6fc327fa"
   name = "golang.org/x/net"
   packages = [
     "proxy",
-    "websocket"
+    "websocket",
   ]
+  pruneopts = "UT"
   revision = "803fdb99c0f72e493c28ef2099d250a9c989d8ff"
 
 [[projects]]
+  digest = "1:023e2c23ff65dcdef1323c792b1141974d97e7335aede04cabe83b5cf6b338ce"
   name = "gopkg.in/oauth2.v3"
   packages = [
     ".",
@@ -96,14 +123,24 @@
     "manage",
     "models",
     "server",
-    "store"
+    "store",
   ]
+  pruneopts = "UT"
   revision = "6f608a6e0307a97455db74fa5297fd38cb249aa7"
   version = "v3.8.4"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f0cdd66d1699665952d49a075fc90f2d4451c51328069ab9075a93f9294dfe2b"
+  input-imports = [
+    "github.com/eclipse/paho.mqtt.golang",
+    "github.com/husobee/vestigo",
+    "github.com/namsral/flag",
+    "gopkg.in/oauth2.v3/errors",
+    "gopkg.in/oauth2.v3/manage",
+    "gopkg.in/oauth2.v3/models",
+    "gopkg.in/oauth2.v3/server",
+    "gopkg.in/oauth2.v3/store",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
