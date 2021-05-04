@@ -1,3 +1,7 @@
+name: Main build
+
+on: [push]
+
 jobs:
   releases-matrix:
     name: Release Go Binary
