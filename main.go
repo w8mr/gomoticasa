@@ -3,8 +3,8 @@
 package main
 
 import (
-	"w8mr.nl/go_my_home/config"
-	"w8mr.nl/go_my_home/server"
+	"github.com/w8mr/gomoticasa/config"
+	"github.com/w8mr/gomoticasa/server"
 	"log"
 )
 

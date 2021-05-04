@@ -3,21 +3,16 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/eclipse/paho.mqtt.golang"
-	"github.com/husobee/vestigo"
-
-	"gopkg.in/oauth2.v3/errors"
-	"gopkg.in/oauth2.v3/manage"
-	"gopkg.in/oauth2.v3/models"
-	"gopkg.in/oauth2.v3/server"
-	"gopkg.in/oauth2.v3/store"
-
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-	"w8mr.nl/go_my_home/config"
+
+	"github.com/eclipse/paho.mqtt.golang"
+	"github.com/husobee/vestigo"
+
+	"github.com/w8mr/gomoticasa/config"
 )
 
 const hist_size = 100
@@ -68,7 +63,6 @@ var bathroom_sensor mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Mess
 		log.Printf("Changed speed, because humidity changed, new speed: %v", context.fanspeed)
 		setSpeed(client, &context)
 	}
-	updateStatus(client, &context)
 }
 
 var defaultHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -160,14 +154,6 @@ func setSpeed(client mqtt.Client, context *Context) {
 	token2.Wait()
 }
 
-func updateStatus(client mqtt.Client, context *Context) {
-	token1 := client.Publish("d566/tempset-ambient/set", 0, false, fmt.Sprintf("%.1f", context.temperature))
-	token2 := client.Publish("d566/tempset-humidity/set", 0, false, fmt.Sprintf("%.1f", context.humidity))
-
-	token1.Wait()
-	token2.Wait()
-}
-
 func traverseJSONMap(m map[string]interface{}, path string) interface{} {
 	parts := strings.SplitAfterN(path, ".", 2)
 	key := strings.TrimSuffix(parts[0], ".")
@@ -202,11 +188,6 @@ func Run(cfg *config.Config) error {
 		os.Exit(1)
 	}
 
-	if token := c.Subscribe("d316/tempset-mode", 0, wtwMode); token.Wait() && token.Error() != nil {
-		log.Println(fmt.Sprintf("Error subscribing wtw: %v", token.Error()))
-		os.Exit(1)
-	}
-
 	log.Println("Subscribed")
 
 	router := vestigo.NewRouter()
@@ -214,7 +195,6 @@ func Run(cfg *config.Config) error {
 
 	router.Get("/", modeHandler(c, &context))
 	router.Post("/action", actionHandler(&context))
-	setupOAuth(router)
 
 	setupTimer()
 
@@ -235,48 +215,6 @@ func actionHandler(context *Context) http.HandlerFunc {
 		log.Print(r)
 		_ = context
 	}
-}
-
-
-func setupOAuth(router *vestigo.Router) {
-	manager := manage.NewDefaultManager()
-	// token memory store
-	manager.MustTokenStorage(store.NewMemoryTokenStore())
-
-	// client memory store
-	clientStore := store.NewClientStore()
-	clientStore.Set("000000", &models.Client{
-		ID:     "000000",
-		Secret: "999999",
-		Domain: "http://localhost",
-	})
-	manager.MapClientStorage(clientStore)
-
-	srv := server.NewDefaultServer(manager)
-	srv.SetAllowGetAccessRequest(true)
-	srv.SetClientInfoHandler(server.ClientFormHandler)
-
-	srv.SetInternalErrorHandler(func(err error) (re *errors.Response) {
-		log.Println("Internal Error:", err.Error())
-		return
-	})
-
-	srv.SetResponseErrorHandler(func(re *errors.Response) {
-		log.Println("Response Error:", re.Error.Error())
-	})
-
-	router.Get("/authorize", func(w http.ResponseWriter, r *http.Request) {
-		err := srv.HandleAuthorizeRequest(w, r)
-		if err != nil {
-			log.Printf("")
-			http.Error(w, err.Error(), http.StatusBadRequest)
-		}
-	})
-
-	router.Get("/token", func(w http.ResponseWriter, r *http.Request) {
-		srv.HandleTokenRequest(w, r)
-	})
-
 }
 
 func setupTimer() {
