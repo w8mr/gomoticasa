@@ -15,7 +15,7 @@ jobs:
       -
         name: Build
         uses: actions/setup-go@v2
-      - run: env GOARCH=arm7 go build
+      - run: env GOOS=linux GOARCH=arm go build
 
       -
         name: Set up QEMU
