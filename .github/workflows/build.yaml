@@ -1,6 +1,8 @@
 name: Main build
 
-on: [push]
+on:
+  release:
+    types: [created]
 
 jobs:
   releases-matrix:
