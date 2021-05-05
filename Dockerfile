@@ -1,4 +1,4 @@
-FROM buster-slim
+FROM debian:buster-slim
 
 COPY ./main /usr/share/gomoticasa
 
