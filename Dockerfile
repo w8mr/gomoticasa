@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM busybox:glibc
 
 COPY ./gomoticasa /usr/bin/gomoticasa
 
