@@ -1,7 +1,7 @@
 FROM debian:buster-slim
 
-COPY ./gomoticasa /usr/share/gomoticasa
+COPY ./gomoticasa /usr/bin/gomoticasa
 
 EXPOSE 8080
 
-CMD ["/usr/share/bin/gomoticasa"]
+CMD ["/usr/bin/gomoticasa"]
