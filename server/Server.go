@@ -13,6 +13,7 @@ import (
 	"github.com/husobee/vestigo"
 
 	"github.com/w8mr/gomoticasa/config"
+	"github.com/w8mr/gomoticasa/controller"
 )
 
 const hist_size = 100
@@ -165,25 +166,13 @@ func traverseJSONMap(m map[string]interface{}, path string) interface{} {
 }
 
 func Run(cfg *config.Config) error {
+    mqttController := controller.NewMqttController(cfg)
 
-	//create a ClientOptions struct setting the broker address, clientid, turn
-	//off trace output and set the default message handler
-	opts := mqtt.NewClientOptions().AddBroker(cfg.Mqtt.Url)
-	opts.SetClientID("go-my-home")
-	opts.SetDefaultPublishHandler(defaultHandler)
-	opts.SetPassword(cfg.Mqtt.Password)
-	opts.SetUsername(cfg.Mqtt.User)
 
-	//create and start a client using the above ClientOptions
-	c := mqtt.NewClient(opts)
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
 
-	log.Println(fmt.Sprintf("Subscribe (url: %v, user: %v, password: %v)", cfg.Mqtt.Url, cfg.Mqtt.User, cfg.Mqtt.Password))
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
-	if token := c.Subscribe("tele/sonoff_bathroom/SENSOR", 0, bathroom_sensor); token.Wait() && token.Error() != nil {
+	if token := mqttController.Client.Subscribe("tele/sonoff_bathroom/SENSOR", 0, bathroom_sensor); token.Wait() && token.Error() != nil {
 		log.Println(fmt.Sprintf("Error subscribing sensor: %v", token.Error()))
 		os.Exit(1)
 	}
@@ -193,7 +182,7 @@ func Run(cfg *config.Config) error {
 	router := vestigo.NewRouter()
 	//controller.SetupStatic(router)
 
-	router.Get("/", modeHandler(c, &context))
+	router.Get("/", modeHandler(mqttController.Client, &context))
 	router.Post("/action", actionHandler(&context))
 
 	setupTimer()
