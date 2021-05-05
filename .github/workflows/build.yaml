@@ -15,7 +15,7 @@ jobs:
       -
         name: Build
         uses: actions/setup-go@v2
-      - run: env GOARCH=arm GOARM=6 go build -ldflags "-linkmode external -extldflags -static" -a -installsuffix cgo -o main .
+      - run: env GOARCH=arm7 go build
 
       -
         name: Set up QEMU
@@ -35,4 +35,5 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/arm
           tags: w8mr/gomoticasa:latest-dev

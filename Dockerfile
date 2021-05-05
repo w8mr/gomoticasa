@@ -1,7 +1,7 @@
-FROM scratch
+FROM buster-slim
 
-COPY ./main /
+COPY ./main /usr/share/gomoticasa
 
 EXPOSE 8080
 
-CMD ["/main"]
+CMD ["/usr/share/bin/gomoticasa"]
