@@ -1,6 +1,6 @@
 FROM debian:buster-slim
 
-COPY ./main /usr/share/gomoticasa
+COPY ./gomoticasa /usr/share/gomoticasa
 
 EXPOSE 8080
 
